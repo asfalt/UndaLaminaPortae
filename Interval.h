@@ -23,7 +23,6 @@ struct Interval
 public:
     Interval();
     Interval(int numberVal, Slice *slice1Item, Slice *slice2Item);
-    void increasePos();
 
 
 

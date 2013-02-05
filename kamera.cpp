@@ -7,9 +7,10 @@
 Kamera::Kamera()
 {
 
+    g = 9.806;
     bkam = 20;       // Ширина камеры
     lkam = 140;      // Длина камеры
-    Hk = 10;        // Начальный напор на камеру
+    Hk = 10;        // Максимальная глубина в камере
     ho = 1.5;          // Глубина в камере в начале наполнения
     Q = 0;           // Расход
     delta = 1.0;       // Расстояние между сечениями (принимаем постоянным)
@@ -17,17 +18,11 @@ Kamera::Kamera()
     Timen = 0.0;       // Текущее время с начала наполнения
     fi = 0.7;        // Вспомогательная переменная схемы Прейсмана
     nslices = 20;    // Количество сечений
+    TimenEnd = 20;   //Время окончания расчёта
 
     ntimes = 0;      // Текущий временной слой
 
-
-    Qti.append(0.2);
-    Qti.append(0.3);
-    Qti.append(0.4);
-    Qti.append(0.5);
-    Qti.append(0.4);
-    Qti.append(0.2);
-    Qti.append(0.1);
+    inputq = new Inputq();
 
     granv = 1.0;
 
@@ -36,6 +31,13 @@ Kamera::Kamera()
 //Функция, создающая сечения и интервалы по размерам камеры
 void Kamera::CreateIntervals()
 {
+   /* //Удаляем старые интервалы
+    VecSlices.clear();
+    VecIntervals.clear();
+    ntimes = 0;      // Текущий временной слой
+   */
+    ClearKam();
+
     //определяем расстояние между интервалами
     delta = lkam/(nslices-1);
 
@@ -74,7 +76,7 @@ void Kamera::CreateIntervals()
 void Kamera::InreaseTime()
 {
     ntimes++;
-    Timen = Timen + ntimes * tau;
+    Timen = Timen + tau;
     //Необходимо в сечениях создать соответствующие элементы для хранения h v
     //Проход по всем сечениям
     QVector<Slice>::iterator it = VecSlices.begin();
@@ -85,8 +87,6 @@ void Kamera::InreaseTime()
         sl->hti.append(-1.0);   //пока присваиваем такую глубину
         sl->vti.append(-1.0);   //и такую скорость
 
-        sl->vti_dop.append(-1.0);
-//        Qti.append(0.0);
     }
 }
 
@@ -119,7 +119,7 @@ void Kamera::EvalKoeffsEquations()
             //Уравнение движения
             Interv->a1 = (1/(2*tau))-(fi*Va/delta);
             Interv->a2 = (1/(2*tau))+(fi*Va/delta);
-            Interv->b1 = -g*fi/delta;
+            Interv->b1 = -(g*fi/delta);
             Interv->b2 = g*fi/delta;
             Interv->K = ( ((1-fi)/delta)*(Va*(v2Prew-v1Prew) + g*(h2Prew-h1Prew)) ) - ((v1Prew+v2Prew)/(2*tau));
 
@@ -181,10 +181,20 @@ void Kamera::ForwardShuttle()
 
     K1Prew = 0.0; K2Prew = 0.0;
 
-//    Qti.append(0.0);
-//    v1 = Qti[ntimes];
 
     //Назначаем граничные условия
+
+    //Сначала определим расход
+    double Qtek, hgran;
+    Qtek = inputq->interpolator->InterpolateLinear(Timen);
+    //Покажем линию текущего положения времени на графике расхода
+    inputq->ShowTimeWhichInterpolate(Timen);
+    //Глубина в камере по предыдущему слою по времени
+    hgran = VecSlices[0].hti[ntimes-1];
+
+    //vgr1 = Qtek/(hgran*bkam);
+    granv = Qtek/(hgran*bkam);
+
     vgr1 = granv;
     vgr2 = 0.0;
 
@@ -288,7 +298,7 @@ void Kamera::BackwardShuttle()
     VecIntervals[col-1].number;
 //    qDebug() << "nu: " << VecIntervals[col-1].number;
 
-    for (int i = col-1; i>0.0; i--)
+    for (int i = col-1; i>0; i--)
     {
 
 
@@ -308,8 +318,8 @@ void Kamera::BackwardShuttle()
 
         h1 = v2*Q1 + h2*Q2 + Q3;
         VecIntervals[i].Slice1->hti[ntimes] = h1;
-        VecIntervals[i].Slice1->vti[ntimes] = (v2 - M3 - M2*h1) / M1;
-//        VecIntervals[i].Slice1->vti[ntimes] = k1pr*h1 + k2pr;
+//        VecIntervals[i].Slice1->vti[ntimes] = (v2 - M3 - M2*h1) / M1;
+        VecIntervals[i].Slice1->vti[ntimes] = k1pr*h1 + k2pr;
 
 
 //        qDebug() << "i: " << i << "    h1= " << h1         << "    h2= " << h2 << "    v2= " << v2       << "  || Q1: " << Q1 << "    Q2= " << Q2         << "    Q3= " << Q3 << "    v2= " << v2;
@@ -324,7 +334,7 @@ void Kamera::BackwardShuttle()
         int i = 0;
         Q1 = VecIntervals[i].Q1;
         Q2 = VecIntervals[i].Q2;
-        Q2 = VecIntervals[i].Q2;
+        Q3 = VecIntervals[i].Q3;
 
         M1 = VecIntervals[i].M1;
         M2 = VecIntervals[i].M2;
@@ -353,6 +363,15 @@ void Kamera::BackwardShuttle()
         qDebug() << "diver:  "  << diver;
 
 
+}
+
+void Kamera::ClearKam()
+{
+    //Удаляем старые интервалы
+    VecSlices.clear();
+    VecIntervals.clear();
+    ntimes = 0;      // Текущий временной слой
+    Timen = 0.0;
 }
 
 

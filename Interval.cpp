@@ -34,10 +34,6 @@ Interval::Interval(int numberVal, Slice *slice1Item, Slice *slice2Item)
 
 }
 
-void Interval::increasePos()
-{
-    Slice1->Xpos = 100;
-    Slice2->Xpos = 122;
-}
+
 
 

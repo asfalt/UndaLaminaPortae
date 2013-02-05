@@ -11,13 +11,9 @@ struct Slice
     QVector<double> vti;    //Текущая скорость
     bool isBound;          //Флаг, показывающий является ли интервал граничным
 
-    QVector<float> vti_dop;    //Текущая скорость для проверки
-
 public:
     Slice();
     Slice(int numberVal, double XposVal, double hVal);
-
-
 
 };
 

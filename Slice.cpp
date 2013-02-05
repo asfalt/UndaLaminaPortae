@@ -10,7 +10,6 @@ Slice::Slice()
     vti.append(0.0);
     isBound = false;
 
-    vti_dop.append(0.0);
 }
 
 
@@ -23,7 +22,6 @@ Slice::Slice(int numberVal, double XposVal, double hVal)
     vti.append(0.0);
     isBound = false;
 
-    vti_dop.append(0.0);
 }
 
 

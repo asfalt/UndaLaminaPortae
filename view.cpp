@@ -4,6 +4,9 @@
 #include <QColor>
 #include <QtGui>
 
+#include <QDebug>
+
+
 
 #include <QDebug>
 
@@ -11,8 +14,12 @@ View::View(QObject *parent) :QGraphicsView()
 {
     Scene1 = new QGraphicsScene();
     this->setScene(Scene1);
-    Mavert = 40;
-    Mahor = 4.0;
+    Mavert = 1.0;
+    Mahor = 1.0;
+    MaVelos = 1.0;
+
+ //   ShowSlices = true;
+ //   ShowMarkers = true;
 
 
 
@@ -26,7 +33,6 @@ View::View(QObject *parent) :QGraphicsView()
 
 
 
-    //this->scale(Mahor,Mavert);
 }
 
 void View::ScaleAll(int sc)
@@ -34,42 +40,20 @@ void View::ScaleAll(int sc)
     this->scale(sc, sc);
 }
 
-void View::DrawScene1()
+
+void View::wheelEvent(QWheelEvent *event)
 {
-    this->Scene1->clear();
-    this->Scene1->addLine(0, 0, 600, 0);
-    this->Scene1->addLine(0, 0, 0, -4);
-    this->Scene1->addLine(5, 0, 5, -4.2);
-    this->Scene1->addLine(10, 0, 10, -4.25);
-}
-
-
-void View::DrawScene2(QVector<Slice> *VecSlices)
-{
-    float X, H;
-
-    this->Scene1->clear();
-
-
-
-    QVector<Slice>::iterator it = VecSlices->begin();
-    for(; it != VecSlices->end(); ++it)
+   // qDebug() << event->delta();
+    if(event->delta() > 0)
     {
-        Slice *S;
-        S = it;
-
-        H = 1.4;
-        X = S->Xpos;
-        Scene1->addLine(X, 0, X, -H*Mavert);
-        Scene1->addText("k");
+        emit SignalWheelUp();
     }
-
-
-
-
-
-   // this->Scene1->addLine(0, 0, pe, 0);
+    else
+    {
+        emit SignalWheelDown();
+    }
 }
+
 
 void View::DrawKamera(Kamera *kamera)
 {
@@ -84,7 +68,7 @@ void View::DrawKamera(Kamera *kamera)
     lkam = lkam*Mahor;
 
 
-    QRect rec(-20,-Hk-20,lkam+40,Hk+40);    //left, top, width, height
+    QRect rec(-50,-Hk-50,lkam+100,Hk+100);    //left, top, width, height
 
     this->Scene1->clear();
     //this->scroll(50,50);
@@ -127,7 +111,7 @@ void View::DrawKamera(Kamera *kamera)
 
 
 
-    //Изображаем вертикальную масштабную линию
+    //Изображаем вертикальную масштабную линию камеры
 
     Scene1->addLine(lkam+50, 15, lkam+50, -Hk-50);
     Scene1->addLine(lkam+48, -Hk-42, lkam+50, -Hk-50, pen[0]);
@@ -146,6 +130,36 @@ void View::DrawKamera(Kamera *kamera)
         texcoo->setPos(lkam+58,-i-12);
         co = co + 2;
         i = i+2*Mavert;
+    }
+
+
+
+    //Изображаем вертикальную масштабную линию скорости
+
+    Scene1->addLine(lkam+90, 15, lkam+90, -Hk-50, pen[4]);
+    Scene1->addLine(lkam+88, -Hk-42, lkam+90, -Hk-50, pen[4]);
+    Scene1->addLine(lkam+92, -Hk-42, lkam+90, -Hk-50, pen[4]);
+
+    i = 0;
+    float vco = 0;
+    //зададим шаг маркеров в зависимости от масштаба
+    float tick = 2/MaVelos;
+    tick = (floor(tick*100))/100;
+    if(tick == 0) {tick = 0.005;}
+
+    while(i < Hk+40)
+    {
+
+        Scene1->addLine(lkam+90, -i, lkam+95, -i);
+
+        QString ss;
+        ss.setNum(vco);
+        QGraphicsTextItem *texcoo = Scene1->addText(ss);
+        texcoo->setDefaultTextColor(Qt::red);
+        texcoo->setPos(lkam+98,-i-12);
+
+        vco = vco + tick;
+        i = i+tick*MaVelos*Mavert;
     }
 
 
@@ -176,15 +190,20 @@ void View::DrawKamera(Kamera *kamera)
 
         Xposm = slu->Xpos * Mahor;
         hm = slu->hti[ntimes] * Mavert;
-        vm = slu->vti[ntimes] *Mavert*5;
+        vm = slu->vti[ntimes] *MaVelos*Mavert;
 
-        if (slu->isBound)
+        //Нарисуем сечения, если их не слишком много
+        if(kamera->nslices < 300)
         {
-            Scene1->addLine(Xposm, 8, Xposm, -Hk, pen[4]);
-        }
-        else
-        {
-            Scene1->addLine(Xposm, 8, Xposm, -Hk, pen[2]);
+
+           if (slu->isBound)
+           {
+               Scene1->addLine(Xposm, 8, Xposm, -Hk, pen[4]);
+           }
+           else
+           {
+               Scene1->addLine(Xposm, 8, Xposm, -Hk, pen[2]);
+           }
         }
 
         //Вода
@@ -195,10 +214,14 @@ void View::DrawKamera(Kamera *kamera)
 
         }
 
+        //Нарисуем кружочки если не слишком много сечений
+        if(kamera->nslices < 50)
+        {
         Scene1->addEllipse(Xposm-4, -hm-4, 8, 8, pen[1]);
 
         //Скорость
         Scene1->addEllipse(Xposm-3, -vm-3, 6, 6, pen[4]);
+        }
 
 
 
@@ -216,6 +239,8 @@ void View::DrawKamera(Kamera *kamera)
     tec2->setPos(0.0 , 20);
 
    //Scene1->addText("kamera");
+
+
 
 
 

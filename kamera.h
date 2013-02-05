@@ -5,6 +5,10 @@
 #include "Interval.h"
 #include <QVector>
 
+#include "inputq.h"
+
+class Inputq;
+
 class Kamera
 {
 public:
@@ -16,10 +20,11 @@ public:
     void ShowKoeffs2();
     void ForwardShuttle();       //Прямая прогонка
     void BackwardShuttle();      //Обратная прогонка
+    void ClearKam();
 
 
     // === Константы ======================================================================================
-    double g = 9.806;                  //Ускорение свободного падения
+    double g;                  //Ускорение свободного падения
 
 
 
@@ -34,16 +39,17 @@ public:
     double Timen;     // Текущее время с начала наполнения
     double fi;        // Вспомогательная переменная схемы Прейсмана
     double nslices;   // Количество сечений
+    double TimenEnd;  //Время окончания расчёта
 
     int ntimes;      // Текущий временной слой
 
-
+    Inputq *inputq;
 
 
     QVector<Slice> VecSlices;             //Вектор сечений
     QVector<Interval> VecIntervals;       //Вектор интервалов
 
-    QVector<float> Qti;                 //Расход
+    QVector<float> Qti;                   //Расход
 
     double granv;
 
