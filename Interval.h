@@ -23,6 +23,9 @@ struct Interval
 public:
     Interval();
     Interval(int numberVal, Slice *slice1Item, Slice *slice2Item);
+    void EvalForward(double K1PrewVal, double K2PrewVal, double vgr1Val, double vgr2Val, int ntimesVal);
+    void EvalBackwardInner(double K1prVal, double K2prVal, int ntimesVal);
+    void EvalBackwardFirst(int ntimesVal);
 
 
 

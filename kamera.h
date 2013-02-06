@@ -17,7 +17,6 @@ public:
     void InreaseTime();
     void EvalKoeffsEquations();
     void ShowKoeffs();
-    void ShowKoeffs2();
     void ForwardShuttle();       //Прямая прогонка
     void BackwardShuttle();      //Обратная прогонка
     void ClearKam();

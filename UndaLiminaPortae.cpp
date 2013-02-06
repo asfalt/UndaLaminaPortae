@@ -72,7 +72,8 @@ Unda::Unda(QWidget *parent)
 
     // === Инициализация элементов ========================================================================
     MasshSlider->setOrientation(Qt::Horizontal);
-    MasshSlider->setMinimum(1);
+    MasshSlider->setMinimum(0);
+    MasshSlider->setEnabled(false);
     Dial1->setEnabled(false);
 
     Button1->setFixedHeight(40);
@@ -159,7 +160,7 @@ Unda::Unda(QWidget *parent)
  //   ButtonLayout1->addSpacing(50);
  //   ButtonLayout1->addWidget(Button1);
  //   ButtonLayout1->addWidget(Button2);
- //   ButtonLayout1->addWidget(Button3);               //Единственная пока не задействованная
+    ButtonLayout1->addWidget(Button3);               //Единственная пока не задействованная
  //   ButtonLayout1->addWidget(Dial1);
     ButtonLayout1->addLayout(ParamKameraLayout);
 
@@ -314,6 +315,7 @@ void Unda::Button2_click()    // === Функция нажатия кнопки 
         Timer1->stop();
         MasshSlider->setMaximum(kam.ntimes);
         MasshSlider->setValue(kam.ntimes);
+        MasshSlider->setEnabled(true);
         return;
     }
 
@@ -519,6 +521,8 @@ void Unda::ReadParkam(bool ReadDefault)
     kam.CreateIntervals();
     view->DrawKamera(&kam);
 
+    MasshSlider->setEnabled(false);
+
     }
 
 
@@ -706,6 +710,18 @@ void Unda::onVeloScaleCange(double &ScaleVal)
     view->DrawKamera(&kam);
 }
 
+
+
+void Unda::closeEvent(QCloseEvent *)
+{
+    if(kam.inputq->isVisible())
+    {
+        kam.inputq->close();
+    }
+}
+
+
+
 void Unda::ZoomInView()
 {
      float k = view->Mavert / view->Mahor;
@@ -743,3 +759,5 @@ void Unda::ZoomOutView()
      }
 
 }
+
+

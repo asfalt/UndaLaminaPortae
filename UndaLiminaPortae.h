@@ -90,6 +90,8 @@ public slots:
 
 private:
     void ReadParkam(bool ReadDefault);    //Функция чтения параметров камеры из файла
+    void closeEvent(QCloseEvent *);
+
 
 
 
